@@ -74,7 +74,13 @@ The source document has separate fields for "Residency" and "Fellowship."
 
 ### Page Title Construction
 
-Parse the Page Title field from the source document into its component parts (separated by pipes). Extract the provider name with credentials (first segment) and the specialty/ies (middle segment(s) — everything between the first and last pipe). Do not substitute specialties from the Specialty field. Reconstruct the cell value at write time by joining the extracted name, the extracted specialty/ies, and "Kelsey-Seybold" separated by space-pipe-space (Unicode U+007C).
+Do not copy the Page Title verbatim. Build it from three parts:
+
+1. Part A: the provider name with credentials (the text before the first pipe in the source Page Title field)
+2. Part B: the specialty/ies (the text between the first and last pipe in the source Page Title field — not from the Specialty column)
+3. Part C: the exact string `Kelsey-Seybold` — two words only, do not append "Clinic" or any other word
+
+Write to the cell as: Part A + space-pipe-space (Unicode U+007C) + Part B + space-pipe-space + Part C
 
 ### Empty Fields
 
