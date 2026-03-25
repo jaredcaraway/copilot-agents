@@ -74,7 +74,7 @@ The source document has separate fields for "Residency" and "Fellowship."
 
 ### Page Title Construction
 
-Parse the Page Title field from the source document into its component parts (separated by pipes). Extract the provider name with credentials (first segment) and the specialty/ies (middle segment(s) — everything between the first and last pipe). Do not substitute specialties from the Specialty field. Reconstruct the cell value at write time by joining the extracted name, the extracted specialty/ies, and "Kelsey-Seybold Clinic" separated by space-pipe-space (Unicode U+007C).
+Parse the Page Title field from the source document into its component parts (separated by pipes). Extract the provider name with credentials (first segment) and the specialty/ies (middle segment(s) — everything between the first and last pipe). Do not substitute specialties from the Specialty field. Reconstruct the cell value at write time by joining the extracted name, the extracted specialty/ies, and "Kelsey-Seybold" separated by space-pipe-space (Unicode U+007C).
 
 ### Empty Fields
 
