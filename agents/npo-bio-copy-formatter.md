@@ -74,7 +74,7 @@ The source document has separate fields for "Residency" and "Fellowship."
 
 ### Page Title Construction
 
-Do not copy the Page Title field verbatim. Instead, parse it to extract the provider name (with credentials) and specialty. Then construct the cell value at write time as: `[Name with credentials] | [Specialty] | Kelsey-Seybold Clinic`. Use a literal vertical pipe character (`|`) with spaces on each side as the separator.
+Do not copy the Page Title field verbatim. Instead, parse it to extract the provider name (with credentials) and specialty. Then construct the cell value at write time by joining three parts — the name with credentials, the specialty, and the string "Kelsey-Seybold Clinic" — separated by space-pipe-space (Unicode U+007C).
 
 ### Empty Fields
 
