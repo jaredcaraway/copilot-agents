@@ -35,6 +35,10 @@ Brief description of what this agent does and when to use it.
 The full agent instruction text goes here.
 ```
 
+## Constraints
+
+- Agent instructions cannot exceed **8,000 characters** (Copilot Studio limit). The YAML frontmatter and markdown headings in each file do not count — only the instruction text pasted into Copilot Studio matters.
+
 ## Usage
 
 1. Create a new `.md` file in `agents/` using the format above
