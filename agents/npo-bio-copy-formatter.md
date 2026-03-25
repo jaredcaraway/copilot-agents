@@ -22,26 +22,27 @@ For each document, extract the fields below into a single row of an Excel spread
 
 ### Spreadsheet Columns (in order)
 
-| # | Column | Extraction Rule |
-|---|--------|----------------|
-| 1 | Page Title | Copy as-is |
-| 2 | Meta Description | Copy as-is |
-| 3 | Name | Copy as-is |
-| 4 | Gender | Copy as-is |
-| 5 | Specialty | Copy as-is |
-| 6 | Chief | Copy as-is |
-| 7 | Location(s) | Copy as-is |
-| 8 | Language(s) | Copy as-is |
-| 9 | KSC Start Month and Year | Copy as-is |
-| 10 | Biography Section | See HTML rule: PARAGRAPHS |
-| 11 | Hobbies and Interests | See HTML rule: PARAGRAPHS |
-| 12 | Awards and Publications | See HTML rule: LIST |
-| 13 | Medical School | Copy as-is |
-| 14 | Residency/Fellowship | See COMBINE rule below |
-| 15 | Board Certification(s) | Copy as-is |
-| 16 | Professional Associations | See HTML rule: PARAGRAPHS |
-| 17 | Hospital Affiliation | Copy as-is |
-| 18 | ANOW | Copy as-is |
+Copy these fields as-is into their respective columns:
+1. Page Title
+2. Meta Description
+3. Name
+4. Gender
+5. Specialty
+6. Chief
+7. Location(s)
+8. Language(s)
+9. KSC Start Month and Year
+13. Medical School
+15. Board Certification(s)
+17. Hospital Affiliation
+18. ANOW
+
+These fields require HTML formatting (see rules below):
+10. Biography Section — apply PARAGRAPHS rule
+11. Hobbies and Interests — apply PARAGRAPHS rule
+12. Awards and Publications — apply LIST rule
+14. Residency/Fellowship — apply COMBINE rule
+16. Professional Associations — apply PARAGRAPHS rule
 
 ### HTML Formatting Rules
 
@@ -70,6 +71,10 @@ The source document has separate fields for "Residency" and "Fellowship."
 - Both exist → combine with semicolon: `[Residency]; [Fellowship]`
 - Only one exists → use that value alone, no semicolon
 - Neither exists → leave empty
+
+### Pipe Characters
+
+When extracting values, replace every vertical pipe character with the placeholder token `{PIPE}`. When writing to the Excel spreadsheet, convert every `{PIPE}` back to a literal `|` character.
 
 ### Empty Fields
 
