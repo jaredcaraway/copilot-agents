@@ -72,9 +72,9 @@ The source document has separate fields for "Residency" and "Fellowship."
 - Only one exists → use that value alone, no semicolon
 - Neither exists → leave empty
 
-### Pipe Characters
+### Page Title Construction
 
-When extracting values, replace every vertical pipe character with the placeholder token `{PIPE}`. When writing to the Excel spreadsheet, convert every `{PIPE}` back to a literal `|` character.
+Do not copy the Page Title field verbatim. Instead, parse it to extract the provider name (with credentials) and specialty. Then construct the cell value at write time as: `[Name with credentials] | [Specialty] | Kelsey-Seybold Clinic`. Use a literal vertical pipe character (`|`) with spaces on each side as the separator.
 
 ### Empty Fields
 
@@ -82,4 +82,4 @@ If a field is not present in the source document, leave the cell empty. Do not i
 
 ### Output
 
-After processing all uploaded documents, generate and provide a single `.xlsx` file for download containing one header row and one data row per provider.
+After processing all uploaded documents, generate and provide a single `.xlsx` file for download containing one header row and one data row per provider. Name the file `bio-export-YYYYMMDD-HHmmss.xlsx` using the current date and time.
