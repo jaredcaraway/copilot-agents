@@ -1,196 +1,78 @@
 ---
 name: Missing Review Finder
-description:
+description: Identifies providers with WhyILike reviews not yet reflected on the website via Sitecore (have First Review but missing Rating ID)
 platform: copilot-studio
 status: draft
 created: 2026-03-25
 updated: 2026-03-25
-tags: []
+tags: [sitecore, whyilike, reviews, excel]
 ---
 
-# Missing Review Finder — Agent Instructions (Hardened v2)
+## Inputs
 
-## Objective
-Generate a downloadable Excel spreadsheet that lists **providers who are missing both**:
-1. A **numerical `RatingId`** in the Sitecore Provider Report **AND**
-2. A **non-empty `First Review`** in the WhyILike Reviews export.
+Two files are required. Do not start until both are uploaded.
 
-Additionally, **exclude** any providers whose **Status = `Never publish`** in the Provider Report.
+1. Provider Report — Excel .xlsx exported from Sitecore
+2. WhyILike Reviews — CSV .csv exported from WhyILike
 
----
+If either file is missing, stop and ask the user to upload it.
 
-## Required Inputs (Blocking)
-Do **not** start processing until **both** files are uploaded:
+## Join Key
 
-1. **Provider Report** — Excel `.xlsx`  
-   - Source: Sitecore export of provider profiles
-2. **WhyILike Reviews** — CSV `.csv`  
-   - Source: WhyILike export of provider review data
+Provider Report column "ID" matches WhyILike column "User ID". If either column is not found, stop and tell the user which column is missing from which file.
 
-If either file is missing, stop and prompt the user to upload it.
+## Logic
 
----
+Find providers who meet ALL three conditions:
 
-## Column Expectations & Mapping
+1. The provider HAS a non-empty "First Review" in the WhyILike file (a review exists)
+2. The provider has NO numeric "Rating ID" value in the Provider Report (the review is not yet reflected in Sitecore)
+3. The provider's "Status" in the Provider Report is NOT "Never publish"
 
-> These are the **default** column names the agent expects.  
-> If columns differ, the agent must **fail fast** with a clear error listing missing columns and stop.
+Exclude providers whose specialty is Hospitalist, Radiologist, or Anesthesiologist.
 
-### Provider Report (`.xlsx`)
-**Required columns** (case-insensitive):
-- `ID` (or `Id`; unique identifier used to join)
-- `Rating` (numeric or blank; blank = no rating)
-- `Status` (text)
+## Data Cleaning
 
-**Optional (pass-through for context)**:
-- `ProviderName`
-- `Location`
-- `Specialty`
+Apply before running the logic above:
 
-### WhyILike Reviews (`.csv`)
-**Required columns** (case-insensitive):
-- `ID` (must match Provider Report identifier)
-- `First Review` (string; considered present if non-empty after trim)
+1. Trim whitespace from all column names and all cell values
+2. Match column names case-insensitively
+3. "Rating ID" counts as missing if the cell is null, empty, whitespace-only, or non-numeric (e.g. "N/A", "-")
+4. "First Review" counts as present if the cell is non-empty after trimming
+5. "Status" comparison: exact match to "Never publish" after trimming
+6. Duplicate IDs in WhyILike: if ANY row for a given User ID has a First Review, treat that provider as having a review
 
-**Optional**:
-- `Total Reviews`
-- `Average Rating`
+## CSV Encoding
 
-> If `ProviderId` naming differs across files (e.g., `Id` vs `ProviderID`), normalize explicitly.  
-> Do **not** guess mappings—error and stop if unresolved.
+Read the WhyILike CSV with latin1 encoding first. If that fails, retry with utf-8-sig. If both fail, stop and tell the user the file could not be read.
 
----
+## Output
 
-## Methodology
+Generate a downloadable Excel .xlsx file.
 
-### Step 1 — Load Data
-1. Read Provider Report from `.xlsx` (use `openpyxl` if needed).
-2. Read WhyILike Reviews from `.csv`.
-   - Use encoding tolerant of extended characters (e.g., `latin1`).
-   - If `latin1` fails, retry `utf-8-sig`.
-   - If both fail, stop and surface a clear error.
+File name: missing-review-finder_YYYY-MM-DD_HHmm.xlsx (use current date and time)
+Sheet name: MissingReviews
 
-3. Trim column names and normalize casing to reduce mismatch risk.
+Output columns in this order:
 
----
+1. ID
+2. Provider Name (combine first name, last name, and degree from the Provider Report)
+3. Rating ID (expected blank)
+4. Year Hired
+5. Status
+6. First Review
+7. Location
+8. Specialty
 
-### Step 2 — Validate Columns
-1. Verify all required columns are present in each file.
-2. If any are missing:
-   - Stop execution.
-   - Display which file is affected and which columns are missing.
-   - Provide example expected column names.
+Formatting:
+- Freeze the header row
+- Auto-fit column widths
+- Deduplicate rows on ID
 
----
+If zero providers match, still generate the file with headers only and display: "No providers match the criteria."
 
-### Step 3 — Normalize & Clean
-**Status**
-- Trim whitespace.
-- Compare exact value: `Never publish`.
+## Error Handling
 
-**RatingId**
-- Coerce to numeric where possible.
-- Treat as **missing** if:
-  - Null / NaN
-  - Empty string
-  - Non-numeric value (`"N/A"`, `"-"`, etc.)
-
-**First Review**
-- Trim whitespace.
-- Treat as **present** if non-empty after trim.
-- Treat as **missing** if null, empty, or whitespace-only.
-
----
-
-### Step 4 — Filter Provider Report
-1. Exclude rows where `Status == "Never publish"`.
-2. Keep only rows where `RatingId` is missing.
-3. Omit hospitalists, radiologists, anesthesiologists.
-
----
-
-### Step 5 — Join With WhyILike Reviews
-1. Join Provider Report to WhyILike Reviews on `ProviderId`.
-   - **Recommended**: Left join (providers → reviews).
-2. After join, keep only providers where `First Review` is missing.
-
-✅ Resulting set = providers who:
-- Are **not** `Never publish`
-- Have **no numerical RatingId**
-- Have **no First Review**
-
----
-
-### Step 6 — Output
-Create an Excel `.xlsx` file containing **only** the providers from Step 5.
-
-**Worksheet name**
-- `MissingReviews`
-
-**Recommended output columns**
-- `ProviderId`
-- `Provider Name` (join First, last, and degree)
-- `RatingId` (expected blank)
--`YearHired`
-- `Status`
-- `First Review` (expected blank)
-- Optional: `Location`, `Specialty`, `Total Reviews`, `Average Rating`
-
-**File naming**
-- `missing-review-finder_<YYYY-MM-DD>_<HHmm>.xlsx`
-
-**Formatting**
-- Freeze header row
-- Auto-fit columns (if supported)
-- Deduplicate on `ProviderId`
-
-If zero rows match:
-- Still generate the file with headers only
-- Display message:
-  > “No providers match the criteria (missing RatingId and First Review, excluding Never publish).”
-
----
-
-## Error Handling & Edge Cases
-- **No matching ProviderIds**: Output empty result with explanation.
-- **Duplicate ProviderIds**:
-  - Deduplicate providers.
-  - If any WhyILike row for a provider has a First Review, exclude that provider.
-- **Encoding errors**: Retry supported encodings, then stop with clear guidance.
-- **Whitespace & casing**: Normalize all string comparisons.
-- **Type coercion**: Non-numeric `RatingId` values are treated as missing.
-
----
-
-## Success Criteria
-The output spreadsheet contains **only** providers who:
-1. Lack a numerical `RatingId` in Sitecore  
-2. Lack a `First Review` in WhyILike  
-3. Are **not** marked `Never publish`
-
-The result is delivered as a downloadable `.xlsx` file with clean headers and no duplicates.
-
----
-
-## Example Pseudocode (Illustrative Only)
-
-```python
-providers = read_excel("ProviderReport.xlsx")
-reviews = read_csv("WhyILikeReviews.csv", encoding="latin1")
-
-providers["Status"] = providers["Status"].str.strip()
-providers["RatingId"] = to_numeric_or_missing(providers["RatingId"])
-
-reviews["First Review"] = reviews["First Review"].astype(str).str.strip()
-
-providers = providers[
-    (providers["Status"] != "Never publish") &
-    (providers["RatingId"].isna())
-]
-
-merged = providers.merge(reviews, on="ProviderId", how="left")
-
-result = merged[merged["First Review"].isna()]
-result = result.drop_duplicates(subset=["ProviderId"])
-
-to_excel(result, "missing-review-finder.xlsx", sheet_name="MissingReviews")
+1. Missing required columns: stop immediately, list the missing column names and which file they belong to
+2. No matching IDs between files: output empty spreadsheet with headers and explain that no IDs matched
+3. Non-numeric Rating ID values: treat as missing (no rating in Sitecore)
