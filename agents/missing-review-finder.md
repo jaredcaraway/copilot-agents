@@ -1,78 +1,86 @@
 ---
 name: Missing Review Finder
-description: Identifies providers with WhyILike reviews not yet reflected on the website via Sitecore (have First Review but missing Rating ID)
+description: Identifies providers with WhyILike reviews not yet reflected on the website via Sitecore
 platform: copilot-studio
 status: draft
 created: 2026-03-25
-updated: 2026-03-25
+updated: 2026-03-27
 tags: [sitecore, whyilike, reviews, excel]
 ---
 
 ## Inputs
 
-Two files are required. Do not start until both are uploaded.
+Two files are required. Do not proceed until both are uploaded.
 
-1. Provider Report — Excel .xlsx exported from Sitecore
-2. WhyILike Reviews — CSV .csv exported from WhyILike
+1. Provider Report — an Excel .xlsx file exported from Sitecore
+2. WhyILike Reviews — a CSV file exported from WhyILike
 
 If either file is missing, stop and ask the user to upload it.
 
-## Join Key
+## Step-by-Step Procedure
 
-Provider Report column "ID" matches WhyILike column "User ID". If either column is not found, stop and tell the user which column is missing from which file.
+Follow these steps in exact order.
 
-## Logic
+### Step 1: Read the Provider Report
 
-Find providers who meet ALL three conditions:
+Open the Provider Report .xlsx file. Read every row. For each row, store these column values: ID, First Name, Last Name, Degree, Rating ID, Year Hired, Status, Location, Specialty. Trim whitespace from all column names and all cell values. Match column names case-insensitively.
 
-1. The provider HAS a non-empty "First Review" in the WhyILike file (a review exists)
-2. The provider has NO numeric "Rating ID" value in the Provider Report (the review is not yet reflected in Sitecore)
-3. The provider's "Status" in the Provider Report is NOT "Never publish"
+### Step 2: Read the WhyILike CSV
 
-Exclude providers whose specialty is Hospitalist, Radiologist, or Anesthesiologist.
+Open the WhyILike .csv file using latin1 encoding. If that fails, retry with utf-8-sig encoding. If both fail, stop and tell the user the file could not be read. For each row, store: User ID, First Review. Trim whitespace from all column names and all cell values. Match column names case-insensitively.
 
-## Data Cleaning
+### Step 3: Build a lookup of providers with reviews
 
-Apply before running the logic above:
+Go through every row in the WhyILike file. If the "First Review" cell is non-empty after trimming, add that row's "User ID" to a set called HAS_REVIEW. A User ID only needs to appear once with a non-empty First Review to be included. Also store the First Review value for each User ID (keep the first non-empty one found).
 
-1. Trim whitespace from all column names and all cell values
-2. Match column names case-insensitively
-3. "Rating ID" counts as missing if the cell is null, empty, whitespace-only, or non-numeric (e.g. "N/A", "-")
-4. "First Review" counts as present if the cell is non-empty after trimming
-5. "Status" comparison: exact match to "Never publish" after trimming
-6. Duplicate IDs in WhyILike: if ANY row for a given User ID has a First Review, treat that provider as having a review
+### Step 4: Filter the Provider Report
 
-## CSV Encoding
+Go through every row in the Provider Report. A provider is MISSING a review in Sitecore if ALL of the following are true:
 
-Read the WhyILike CSV with latin1 encoding first. If that fails, retry with utf-8-sig. If both fail, stop and tell the user the file could not be read.
+1. The row's "ID" value exists in the HAS_REVIEW set from Step 3
+2. The row's "Rating ID" cell is empty, blank, whitespace-only, or non-numeric (e.g. "N/A", "-", or any text)
+3. The row's "Status" cell does NOT exactly equal "Never publish" (after trimming)
+4. The row's "Specialty" cell does NOT contain "Hospitalist", "Radiologist", or "Anesthesiologist" (case-insensitive, partial match)
 
-## Output
+If a row passes all four checks, add it to the results list.
 
-Generate a downloadable Excel .xlsx file.
+### Step 5: Build the output spreadsheet
 
-File name: missing-review-finder_YYYY-MM-DD_HHmm.xlsx (use current date and time)
-Sheet name: MissingReviews
+Create a new Excel .xlsx file. Sheet name: MissingReviews
 
-Output columns in this order:
-
+Add one header row with these columns in this exact order:
 1. ID
-2. Provider Name (combine first name, last name, and degree from the Provider Report)
-3. Rating ID (expected blank)
+2. Provider Name
+3. Rating ID
 4. Year Hired
 5. Status
 6. First Review
 7. Location
 8. Specialty
 
-Formatting:
-- Freeze the header row
-- Auto-fit column widths
-- Deduplicate rows on ID
+For each result from Step 4, write one row:
+- ID: the ID value from the Provider Report
+- Provider Name: combine First Name + space + Last Name + comma + space + Degree from the Provider Report. Example: John Smith, MD
+- Rating ID: the Rating ID value from the Provider Report (expected to be blank)
+- Year Hired: the Year Hired value from the Provider Report
+- Status: the Status value from the Provider Report
+- First Review: the First Review value stored in Step 3 for this User ID
+- Location: the Location value from the Provider Report
+- Specialty: the Specialty value from the Provider Report
 
-If zero providers match, still generate the file with headers only and display: "No providers match the criteria."
+Deduplicate rows by ID. Keep only the first occurrence of each ID.
+
+Freeze the header row. Auto-fit column widths.
+
+### Step 6: Save and provide for download
+
+Save the file as: missing-review-finder_YYYY-MM-DD_HHmm.xlsx (use the current date and time).
+
+Provide the file as a download. Tell the user how many providers were found.
+
+If zero providers matched, still generate the file with headers only and display: "No providers matched the criteria — all reviewed providers already have a Rating ID in Sitecore, or were excluded by status/specialty."
 
 ## Error Handling
 
-1. Missing required columns: stop immediately, list the missing column names and which file they belong to
-2. No matching IDs between files: output empty spreadsheet with headers and explain that no IDs matched
-3. Non-numeric Rating ID values: treat as missing (no rating in Sitecore)
+1. If a required column is missing from either file, stop immediately. List the exact column name that is missing and which file it belongs to.
+2. If no IDs from the Provider Report appear in the WhyILike HAS_REVIEW set, output the empty spreadsheet with headers and tell the user: "No User IDs in the WhyILike file matched any IDs in the Provider Report."
