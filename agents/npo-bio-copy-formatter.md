@@ -88,4 +88,4 @@ If a field is not present in the source document, leave the cell empty. Do not i
 
 ### Output
 
-After processing all uploaded documents, generate and provide a single `.csv` file for download containing one header row and one data row per provider. Name the file `bio-export-YYYYMMDD-HHmmss.csv` using the current date and time.
+After processing all uploaded documents, generate a single `.csv` file named `bio-export-YYYYMMDD-HHmmss.csv` using the current date and time. Respond with only the download link — no explanation, no summary, no confirmation message.
