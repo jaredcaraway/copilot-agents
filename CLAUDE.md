@@ -25,4 +25,5 @@ Each agent file has YAML frontmatter (name, description, platform, status, dates
 - Be concise — every character counts against the 8K limit
 - Write deterministic rules (explicit if/then, no ambiguity)
 - Prefer numbered lists over markdown tables
-- Always check character count after edits: `wc -c agents/<file>.md`
+- Always validate after edits: `python scripts/validate.py` — checks the 8K instruction-text limit, literal `|` characters, markdown tables, and frontmatter completeness for every agent
+- Use the script instead of `wc -c`: `wc -c` counts the whole file, including YAML frontmatter and organizational headings that are never pasted into Copilot Studio, so it over-counts and can falsely report an agent as over the limit. The script counts only the instruction text (the `## Instructions` section), which is what the 8K limit actually applies to — and catches the pipe/table rules `wc` can't check.
